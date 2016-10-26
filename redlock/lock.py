@@ -101,15 +101,18 @@ class RedLock(object):
             }]
 
         for conn in connection_details:
-            if isinstance(conn, redis.StrictRedis):
-                node = conn
-            elif 'url' in conn:
-                url = conn.pop('url')
-                node = redis.StrictRedis.from_url(url, **conn)
-            else:
-                node = redis.StrictRedis(**conn)
-            node._release_script = node.register_script(RELEASE_LUA_SCRIPT)
-            self.redis_nodes.append(node)
+            try:
+                if isinstance(conn, redis.StrictRedis):
+                    node = conn
+                elif 'url' in conn:
+                    url = conn.pop('url')
+                    node = redis.StrictRedis.from_url(url, **conn)
+                else:
+                    node = redis.StrictRedis(**conn)
+                node._release_script = node.register_script(RELEASE_LUA_SCRIPT)
+                self.redis_nodes.append(node)
+            except redis.exceptions.ConnectionError:
+                pass
         self.quorum = len(self.redis_nodes) // 2 + 1
 
     def __enter__(self):
