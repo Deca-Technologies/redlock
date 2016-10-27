@@ -110,8 +110,9 @@ class RedLock(object):
                 else:
                     node = redis.StrictRedis(**conn)
                 node._release_script = node.register_script(RELEASE_LUA_SCRIPT)
+                node.ping()
                 self.redis_nodes.append(node)
-            except redis.exceptions.ConnectionError:
+            except (redis.exceptions.ConnectionError, redis.exceptions.TimeoutError):
                 pass
         self.quorum = len(self.redis_nodes) // 2 + 1
 
